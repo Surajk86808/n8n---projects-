@@ -1,0 +1,449 @@
+{
+  "name": "rb2b x enrichment x cold outreach campaign lecture",
+  "nodes": [
+    {
+      "parameters": {
+        "trigger": [
+          "any_event"
+        ],
+        "channelId": {
+          "__rl": true,
+          "value": "C07SEF0HBS6",
+          "mode": "list",
+          "cachedResultName": "email-reply"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8078a924-7e8c-4c85-ba02-1060e49fb7e1",
+      "name": "Slack Trigger",
+      "webhookId": "97a27010-4c0b-4201-b699-614ee1a1fbba",
+      "credentials": {
+        "slackApi": {
+          "id": "2ZVzocGiB4ISVgcU",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "additionalFields": {
+          "company": "={{ $json.company }}",
+          "country": "={{ $json.country }}",
+          "first_name": "={{ $json.first_name }}",
+          "full_name": "={{ $json.full_name }}",
+          "last_name": "={{ $json.last_name }}",
+          "linkedin": "={{ $json.linkedin }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dropcontact",
+      "typeVersion": 1,
+      "position": [
+        520,
+        0
+      ],
+      "id": "81a25a99-2e37-48e1-888c-fcdf0ffe1989",
+      "name": "Dropcontact",
+      "credentials": {
+        "dropcontactApi": {
+          "id": "XAsq8BXtEquqB7ji",
+          "name": "Dropcontact account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input data from Slack Trigger\nconst slackMessage = $input.first();\n\n// Function to extract contact details from Slack message\nfunction extractContactInfo(slackMessage) {\n  // Get the raw text\n  const text = slackMessage.json.text;\n  \n  // Initialize the result object\n  const contactInfo = {\n    first_name: \"\",\n    last_name: \"\",\n    full_name: \"\",\n    company: \"\",\n    linkedin: \"\",\n    email: \"\",\n    country: \"\"\n  };\n  \n  // Extract name\n  const nameMatch = text.match(/Name:\\s*(.*?)(?:\\n|$)/);\n  if (nameMatch && nameMatch[1]) {\n    contactInfo.full_name = nameMatch[1].trim();\n    \n    // Split name into first and last name\n    const nameParts = contactInfo.full_name.split(' ');\n    if (nameParts.length >= 1) {\n      contactInfo.first_name = nameParts[0];\n    }\n    if (nameParts.length >= 2) {\n      contactInfo.last_name = nameParts.slice(1).join(' ');\n    }\n  }\n  \n  // Extract company\n  const companyMatch = text.match(/Company:\\s*(.*?)(?:\\n|$)/);\n  if (companyMatch && companyMatch[1]) {\n    contactInfo.company = companyMatch[1].trim();\n  }\n  \n  // Extract LinkedIn URL from either text or blocks\n  const linkedinMatch = text.match(/Linkedin:\\s*(?:<?)([^\\s|>]*linkedin[^\\s|>]*)(?:\\|[^>]*)?[>]?/i);\n  if (linkedinMatch && linkedinMatch[1]) {\n    contactInfo.linkedin = linkedinMatch[1].trim();\n  } else if (slackMessage.json.blocks) {\n    // Try to extract from rich text block if available\n    for (const block of slackMessage.json.blocks) {\n      if (block.type === 'rich_text' && block.elements && block.elements.length > 0) {\n        for (const element of block.elements) {\n          if (element.type === 'rich_text_section' && element.elements) {\n            for (const subElement of element.elements) {\n              if (subElement.type === 'link' && subElement.url && subElement.url.includes('linkedin.com')) {\n                contactInfo.linkedin = subElement.url;\n                break;\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n  \n  // Extract email - FIXED VERSION\n  const emailMatch = text.match(/Email:\\s*(?:<mailto:)?([^|\\s<>]+@[^|\\s<>]+\\.[^|\\s<>]+)/i);\n  if (emailMatch && emailMatch[1]) {\n    contactInfo.email = emailMatch[1].trim();\n  } else if (slackMessage.json.blocks) {\n    // Try to extract from rich text block if available\n    for (const block of slackMessage.json.blocks) {\n      if (block.type === 'rich_text' && block.elements && block.elements.length > 0) {\n        for (const element of block.elements) {\n          if (element.type === 'rich_text_section' && element.elements) {\n            for (const subElement of element.elements) {\n              if (subElement.type === 'link' && subElement.url && subElement.url.includes('mailto:')) {\n                // Clean up the email extraction\n                const mailtoMatch = subElement.url.match(/mailto:([^|\\s<>]+@[^|\\s<>]+\\.[^|\\s<>]+)/i);\n                if (mailtoMatch && mailtoMatch[1]) {\n                  contactInfo.email = mailtoMatch[1];\n                  break;\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n  \n  // Extract location/country - FIXED VERSION\n  const locationMatch = text.match(/Location:\\s*(.*?)(?:\\n|$)/);\n  if (locationMatch && locationMatch[1]) {\n    // Just use the entire location string\n    contactInfo.country = locationMatch[1].trim();\n  }\n  \n  return contactInfo;\n}\n\n// Extract contact information\nconst contactInfo = extractContactInfo(slackMessage);\n\n// Create output for Dropcontact\nconst output = {\n  json: contactInfo\n};\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        1480
+      ],
+      "id": "b5499f84-fe4d-4b39-b5fa-c14fc4ea37fb",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input data from Slack Trigger\nconst slackMessage = $input.first();\n\n// Function to extract contact details from Slack message\nfunction extractContactInfo(slackMessage) {\n  // Get the raw text\n  const text = slackMessage.json.text;\n  \n  // Initialize the result object\n  const contactInfo = {\n    first_name: \"\",\n    last_name: \"\",\n    full_name: \"\",\n    company: \"\",\n    linkedin: \"\",\n    email: \"\",\n    country: \"\"\n  };\n  \n  // Extract name\n  const nameMatch = text.match(/Name:\\s*(.*?)(?:\\n|$)/);\n  if (nameMatch && nameMatch[1]) {\n    contactInfo.full_name = nameMatch[1].trim();\n    \n    // Split name into first and last name\n    const nameParts = contactInfo.full_name.split(' ');\n    if (nameParts.length >= 1) {\n      contactInfo.first_name = nameParts[0];\n    }\n    if (nameParts.length >= 2) {\n      contactInfo.last_name = nameParts.slice(1).join(' ');\n    }\n  }\n  \n  // Extract company\n  const companyMatch = text.match(/Company:\\s*(.*?)(?:\\n|$)/);\n  if (companyMatch && companyMatch[1]) {\n    contactInfo.company = companyMatch[1].trim();\n  }\n  \n  // Extract LinkedIn URL from either text or blocks\n  const linkedinMatch = text.match(/Linkedin:\\s*(?:<?)([^\\s|>]*linkedin[^\\s|>]*)(?:\\|[^>]*)?[>]?/i);\n  if (linkedinMatch && linkedinMatch[1]) {\n    contactInfo.linkedin = linkedinMatch[1].trim();\n  } else if (slackMessage.json.blocks) {\n    // Try to extract from rich text block if available\n    for (const block of slackMessage.json.blocks) {\n      if (block.type === 'rich_text' && block.elements && block.elements.length > 0) {\n        for (const element of block.elements) {\n          if (element.type === 'rich_text_section' && element.elements) {\n            for (const subElement of element.elements) {\n              if (subElement.type === 'link' && subElement.url && subElement.url.includes('linkedin.com')) {\n                contactInfo.linkedin = subElement.url;\n                break;\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n  \n  // Extract email - FIXED VERSION\n  const emailMatch = text.match(/Email:\\s*(?:<mailto:)?([^|\\s<>]+@[^|\\s<>]+\\.[^|\\s<>]+)/i);\n  if (emailMatch && emailMatch[1]) {\n    contactInfo.email = emailMatch[1].trim();\n  } else if (slackMessage.json.blocks) {\n    // Try to extract from rich text block if available\n    for (const block of slackMessage.json.blocks) {\n      if (block.type === 'rich_text' && block.elements && block.elements.length > 0) {\n        for (const element of block.elements) {\n          if (element.type === 'rich_text_section' && element.elements) {\n            for (const subElement of element.elements) {\n              if (subElement.type === 'link' && subElement.url && subElement.url.includes('mailto:')) {\n                // Clean up the email extraction\n                const mailtoMatch = subElement.url.match(/mailto:([^|\\s<>]+@[^|\\s<>]+\\.[^|\\s<>]+)/i);\n                if (mailtoMatch && mailtoMatch[1]) {\n                  contactInfo.email = mailtoMatch[1];\n                  break;\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n  \n  // Extract location/country - FIXED VERSION\n  const locationMatch = text.match(/Location:\\s*(.*?)(?:\\n|$)/);\n  if (locationMatch && locationMatch[1]) {\n    // Just use the entire location string\n    contactInfo.country = locationMatch[1].trim();\n  }\n  \n  return contactInfo;\n}\n\n// Extract contact information\nconst contactInfo = extractContactInfo(slackMessage);\n\n// Create output for Dropcontact\nconst output = {\n  json: contactInfo\n};\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ],
+      "id": "c8a5e0c5-4e61-4d4c-8f9a-4f3dd05b5497",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "96a877a4-5443-4b56-8406-75c3de43b762",
+              "leftValue": "={{ $('Dropcontact').item.json.email[0].email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1380,
+        0
+      ],
+      "id": "e3224f09-bf05-4de4-8d18-852460048e15",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a personalized email (under 50 words) to {{ $json.first_name }}{{ $json.last_name }},  who is at {{ $json.company }}({{ $json.nb_employees }} employees) in {{ $json.country }}. They visited our website but haven't converted to a client.\n\nGuidelines:\n\n- Keep the email under 50 words (not including the subject line or signature)\n- Use a short subject line that includes their first name and company name \n- Mention their website visit in a non-creepy way\n- Reference their company size (use the variable), country, and any relevant details\n- Make the call-to-action: \"Lmk how can I help you?\"\n- Write in a direct, brief, and genuinely helpful tone—not like a marketing bot\n- Sign off as \"Manthan, Founder, Lead Gen Man\"\n- Separate greeting, body, and signature with line breaks\n- No generic or templated language; make it feel specifically written for this person and company\n\n\nExample Output:\nSubject: Adrienne, quick idea for Secureframe\n\nHi Adrienne,\n\nSaw you visited our site—impressed by your work scaling Secureframe’s marketing. I have a lead gen idea tailored for your team. Lmk how can I help you?\n\nBest,\nManthan, Founder, Lead Gen Man",
+        "options": {
+          "systemMessage": "=You are an expert sales copywriter who specializes in creating brief, highly personalized emails that convert prospects into clients. You write in a conversational, authentic tone that stands out from typical sales emails.\n\nFollow these rules precisely:\n1. Keep all emails under 50 words (excluding subject line and signature)\n2. Include a personalized subject line that mentions the company name\n3. Acknowledge that you noticed their website visit in a non-creepy way\n4. Reference specific details about their company, industry, or role\n5. Include a single, clear call-to-action (usually asking for a brief call)\n6. Sound like a helpful human, not a marketing bot\n7. Write in a direct, concise style with 1-2 sentence paragraphs\n8. Always sign off as \"Manthan, Founder, Lead Gen Man\"\n9. Format properly with line breaks between greeting, paragraphs, and signature\n10. Never use obvious templates or generic marketing language\n\nThe email should feel like it was crafted specifically for this person based on research about them and their company."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        740,
+        0
+      ],
+      "id": "842be0fe-3870-40e8-9354-18a6c754d4ae",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        780,
+        220
+      ],
+      "id": "baef4292-501e-432f-9010-4fe057c8006d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "9WpWmiE8A7Gl3BYM",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.heyreach.io/api/public/campaign/AddLeadsToCampaign",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "dwAWTd05budmOYB0eAL4bgaERFMvthdEaRqyIAao="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "text/plain"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"campaignId\": 115122,\n    \"accountLeadPairs\": [\n        {\n            \"linkedInAccountId\": 71043,\n            \"lead\": {\n                \"firstName\": \"{{ $('Dropcontact').item.json.first_name }}\",\n                \"lastName\": \"{{ $('Dropcontact').item.json.last_name }}\",\n                \"location\": \"{{ $('Dropcontact').item.json.country }}\",\n                \"companyName\": \"{{ $('Dropcontact').item.json.company }}\",\n                \"about\": \"{{ $('AI Agent').item.json.output }}\",\n                \"profileUrl\": \"https://{{ $('Dropcontact').item.json.linkedin }}\"\n            }\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1880,
+        180
+      ],
+      "id": "5502bd10-2058-4a51-ae70-d7d86c8d40c9",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "url": "=https://emailverifier.reoon.com/api/v1/verify?email={{ $('Dropcontact').item.json.email[0].email }}&key=g6xLcBxlp0D1ikToWrvqzrrJtraaQbbB&mode=quick",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        -100
+      ],
+      "id": "3732cd70-9a4f-4236-9bfe-7fe7264b43e5",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b65cd0d4-714c-4b66-a401-f04af0bfd0ab",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "valid",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1700,
+        -100
+      ],
+      "id": "b70c1457-fb15-4b8b-a565-315cc7133b4c",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $('If').item.json.subject }}",
+        "message": "={{ $('If').item.json.body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1900,
+        -120
+      ],
+      "id": "ad2a63cf-be21-4da0-9c48-6a1f891e8097",
+      "name": "Gmail",
+      "webhookId": "177465f6-05ff-49fc-93da-08392cb48577",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gC5tBV1b2itKkIZb",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input: items[0].json.output contains the email string\nconst emailText = items[0].json.output;\n\n// Find the index of the first double line break\nconst splitIndex = emailText.indexOf('\\n\\n');\n\n// Extract and clean the subject line\nconst subjectLine = emailText.substring(0, splitIndex).replace('Subject: ', '').trim();\n\n// Extract the email body\nconst emailBody = emailText.substring(splitIndex + 2).trim();\n\n// Output as a new object\nreturn [\n  {\n    json: {\n      subject: subjectLine,\n      body: emailBody\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "id": "df956b3e-41a7-443c-bbcf-f3b0a350e73e",
+      "name": "Code2"
+    }
+  ],
+  "pinData": {
+    "Code1": [
+      {
+        "json": {
+          "first_name": "Adrienne",
+          "last_name": "Lin",
+          "full_name": "Adrienne Lin",
+          "company": "Secureframe",
+          "linkedin": "http://www.linkedin.com/in/adriennelin0",
+          "email": "",
+          "country": "United States"
+        }
+      }
+    ],
+    "Dropcontact": [
+      {
+        "json": {
+          "first_name": "Adrienne",
+          "last_name": "Lin",
+          "full_name": "Adrienne Lin",
+          "civility": "Mrs",
+          "linkedin": "www.linkedin.com/in/adriennelin0",
+          "email": [
+            {
+              "email": "adrienne@secureframe.com",
+              "qualification": "nominative@pro"
+            }
+          ],
+          "company": "Secureframe",
+          "website": "www.secureframe.com",
+          "country": "United States",
+          "company_linkedin": "www.linkedin.com/company/secureframe",
+          "nb_employees": "201-500"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Slack Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        []
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Dropcontact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dropcontact": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "174cf79e-c70f-447d-a55e-de5a3b177571",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "eae46237f0b03e1e21495b9d127d17ad71e5e7504c7d7b1084f9a3d34657c561"
+  },
+  "id": "w1iSk7ch3lobU3bY",
+  "tags": []
+}
