@@ -1,0 +1,614 @@
+{
+  "name": "Ai_Agent_Apollo_Scraper_with_Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        60,
+        200
+      ],
+      "id": "3eaffffa-5d79-410c-8ef0-df383780dbe3",
+      "name": "Telegram Trigger",
+      "webhookId": "......"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3626315e-ef3d-4f32-a404-f0efcf40d1ef",
+              "name": "text",
+              "value": "={{ $('Telegram Trigger').item.json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        680,
+        260
+      ],
+      "id": "1ffd01cb-5407-4117-a6bf-fc17509094bd",
+      "name": "Set Message"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger').item.json.message.voice.file_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        580,
+        80
+      ],
+      "id": "27ba433b-be2c-4ac5-b73e-3c49495a9253",
+      "name": "Get File",
+      "webhookId": "15d231bf-8c8a-4651-af1f-8bd73fa25e7a"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        800,
+        80
+      ],
+      "id": "5ae853c2-f1b3-41b2-99e8-03a55ef49352",
+      "name": "Transcribe message",
+      "credentials": {
+        "openAiApi": {
+          "id": "9WpWmiE8A7Gl3BYM",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1060,
+        220
+      ],
+      "id": "39ef1c48-7820-49de-be33-4f20f60400ec",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1260,
+        320
+      ],
+      "id": "2dfabe45-af85-42a9-a597-37b56c94b148",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "9WpWmiE8A7Gl3BYM",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### Watches Telegram for Incoming messages\n\nTo create a bot add this bot as your friend: \n\nhttps://telegram.me/BotFather\n",
+        "height": 420,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "c3450315-0d70-44a2-b788-d79cb3c8ad44",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this google Sheets tool when needing to refer to an industry id to form your request url for scraping the leads",
+        "documentId": {
+          "__rl": true,
+          "value": "1TuRVJ09x2xNK9WNS9uADyNYgcxKdCKVFSigco0FgXHU",
+          "mode": "list",
+          "cachedResultName": "Industry ID for Agent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TuRVJ09x2xNK9WNS9uADyNYgcxKdCKVFSigco0FgXHU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TuRVJ09x2xNK9WNS9uADyNYgcxKdCKVFSigco0FgXHU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        1500,
+        460
+      ],
+      "id": "558eb21b-aa44-4ebc-8967-dba9909dc038",
+      "name": "Gets Location ID's to put in the URL",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BABF9fd2GiPmlycd",
+          "name": "Google Sheets Cred"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/code_crafter~apollo-io-scraper/runs/last?token=Apify token",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1840,
+        200
+      ],
+      "id": "260118f6-7ca2-4139-9c76-4d70e2cf2a9b",
+      "name": "Gets latest actor run"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.apify.com/v2/datasets/{{ $json.data.defaultDatasetId }}/items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2060,
+        200
+      ],
+      "id": "450b114e-3e9d-4651-bef2-4ac0d12c955f",
+      "name": "Gets the data scraped from the scraper in apify"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fnVRl-aAW-DEleW8P-1X5RRx4yYHdhNC-PAc9W-1kZE",
+          "mode": "list",
+          "cachedResultName": "Agent Leads Scraped",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fnVRl-aAW-DEleW8P-1X5RRx4yYHdhNC-PAc9W-1kZE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fnVRl-aAW-DEleW8P-1X5RRx4yYHdhNC-PAc9W-1kZE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "first_name": "={{ $json.first_name }}",
+            "last_name": "={{ $json.last_name }}",
+            "title": "={{ $json.title }}",
+            "email": "={{ $json.email }}",
+            "Personal LinkedIn headline": "={{ $json.headline }}",
+            "organization/name": "={{ $json.organization.name }}",
+            "country": "={{ $json.country }}",
+            "organization/linkedin_url": "={{ $json.organization.linkedin_url }}",
+            "linkedin_url": "={{ $json.linkedin_url }}",
+            "Website": "={{ $json.organization.website_url }}",
+            "organization/founded_year": "={{ $json.organization_founded_year }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "first_name",
+              "displayName": "first_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_name",
+              "displayName": "last_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "linkedin_url",
+              "displayName": "linkedin_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "organization/linkedin_url",
+              "displayName": "organization/linkedin_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Personal LinkedIn headline",
+              "displayName": "Personal LinkedIn headline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "organization/name",
+              "displayName": "organization/name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "organization/founded_year",
+              "displayName": "organization/founded_year",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2280,
+        200
+      ],
+      "id": "463c8d4f-d18e-4c17-9ca9-47e91e2c8a47",
+      "name": "Puts data nicely into a google sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BABF9fd2GiPmlycd",
+          "name": "Google Sheets Cred"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1499dcaa-e566-4e65-b620-3c50954ef107",
+              "leftValue": "={{ $json.message.voice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        200
+      ],
+      "id": "6a05ba1f-239c-4fb6-aaa6-db968ade3c4f",
+      "name": "Audio or Text Message?"
+    },
+    {
+      "parameters": {
+        "content": "## Processes Telegram Messages and prepares it for the AI Agent",
+        "height": 420,
+        "width": 940
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        260,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "0c77ff45-704f-46ae-a90a-83188a3a0759",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "### Agent creates Apollo.io search URL based off Telegram message for leads the user wanted to scrape and scrapes Apollo using this APify Scraper: \n\n### https://console.apify.com/actors/jljBwyyQakqrL1wae",
+        "height": 420,
+        "width": 560
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1220,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "972ee274-9fe9-47ef-a688-d52f805f87e9",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool if ANYTHING about scraping companies or leads is mentioned to create a url/link to scrape those companies. \n\nThis tool has placeholders for you to put the amount of leads they want scraped as well as a placeholder for you to put the search url ",
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/code_crafter~apollo-io-scraper/run-sync?token=Apify-token-api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n    \"getPersonalEmails\": true,\n    \"getWorkEmails\": true,\n    \"totalRecords\": {amountOfLeadsScrapedGoesHere},\n    \"url\": \"{requestUrlGoeHere}\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        460
+      ],
+      "id": "791768a9-024b-4eb4-8c4a-e7c7afdfacad",
+      "name": "Start Apify Scraper"
+    },
+    {
+      "parameters": {
+        "content": "## Gets Scraped data from Apify and puts the data nicely into a Google Sheet",
+        "height": 420,
+        "width": 640
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1800,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "c8505a9f-82c7-49ef-901b-41a92677cb11",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "try to write the prompt on your own as a homework:))",
+        "options": {
+          "systemMessage": "You are a helpful intelligent assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        1340,
+        160
+      ],
+      "id": "778b3555-f08b-4910-b270-36ac912e4eeb",
+      "name": "AI Agent1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Audio or Text Message?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe message": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Message": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Gets latest actor run": {
+      "main": [
+        [
+          {
+            "node": "Gets the data scraped from the scraper in apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gets the data scraped from the scraper in apify": {
+      "main": [
+        [
+          {
+            "node": "Puts data nicely into a google sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio or Text Message?": {
+      "main": [
+        [
+          {
+            "node": "Get File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gets Location ID's to put in the URL": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Apify Scraper": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Gets latest actor run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dca2e202-115b-491f-bfed-ce42fc6a14d2",
+  "meta": {
+    "instanceId": "eae46237f0b03e1e21495b9d127d17ad71e5e7504c7d7b1084f9a3d34657c561"
+  },
+  "id": "W01nurwfMxKpa12M",
+  "tags": []
+}
